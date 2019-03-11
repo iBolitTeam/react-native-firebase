@@ -4,11 +4,12 @@ import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.facebook.react.HeadlessJsTaskService;
+//import com.facebook.react.HeadlessJsTaskService;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import io.invertase.firebase.Utils;
+import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class RNFirebaseMessagingService extends FirebaseMessagingService {
   private static final String TAG = "RNFMessagingService";
@@ -52,7 +53,26 @@ public class RNFirebaseMessagingService extends FirebaseMessagingService {
           .sendBroadcast(messagingEvent);
       } else {
         try {
+          
+          int badge = 0;
+          try {
+            Log.d(TAG, "Received push data " + message.getData().toString());
+            String data = message.getData().get("badge");
+            if (data != null)
+              badge = Integer.parseInt(data);
+          } catch (Exception e) {
+            Log.d(TAG, "JSON Parse error");
+          }
+          if (badge == 0) {
+            Log.d(TAG, "Remove badge count");
+            ShortcutBadger.removeCount(this.getApplicationContext());
+          } else {
+            Log.d(TAG, "Apply badge count: " + badge);
+            ShortcutBadger.applyCount(this.getApplicationContext(), badge);
+          }
+          
           // If the app is in the background we send it to the Headless JS Service
+          /*
           Intent headlessIntent = new Intent(
             this.getApplicationContext(),
             RNFirebaseBackgroundMessagingService.class
@@ -62,6 +82,7 @@ public class RNFirebaseMessagingService extends FirebaseMessagingService {
             .getApplicationContext()
             .startService(headlessIntent);
           HeadlessJsTaskService.acquireWakeLockNow(this.getApplicationContext());
+          */
         } catch (IllegalStateException ex) {
           Log.e(
             TAG,
